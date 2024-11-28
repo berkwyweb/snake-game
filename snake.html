@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yılan Oyunu</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #2e2e2e;
+            margin: 0;
+            color: white;
+        }
+
+        canvas {
+            border: 2px solid #fff;
+            background-color: #222;
+        }
+
+        .score {
+            position: absolute;
+            top: 10px;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="score">Puan: 0</div>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const gridSize = 20;
+        const canvasSize = 400;
+        let snake = [{ x: 160, y: 160 }];
+        let direction = { x: gridSize, y: 0 }; // Başlangıç yönü sağ
+        let food = { x: 0, y: 0 };
+        let score = 0;
+
+        // Başlatma
+        function initGame() {
+            document.addEventListener('keydown', changeDirection);
+            spawnFood();
+            gameLoop();
+        }
+
+        // Yılanın hareketi
+        function gameLoop() {
+            setTimeout(() => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                moveSnake();
+                checkCollision();
+                drawSnake();
+                drawFood();
+                updateScore();
+                gameLoop();
+            }, 100);
+        }
+
+        // Yılanın yönünü değiştirme
+        function changeDirection(event) {
+            if (event.key === 'ArrowUp' && direction.y === 0) {
+                direction = { x: 0, y: -gridSize };
+            } else if (event.key === 'ArrowDown' && direction.y === 0) {
+                direction = { x: 0, y: gridSize };
+            } else if (event.key === 'ArrowLeft' && direction.x === 0) {
+                direction = { x: -gridSize, y: 0 };
+            } else if (event.key === 'ArrowRight' && direction.x === 0) {
+                direction = { x: gridSize, y: 0 };
+            }
+        }
+
+        // Yılanın hareketi ve büyümesi
+        function moveSnake() {
+            const newHead = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
+
+            // Yılanın yediği yemi kontrol et
+            if (newHead.x === food.x && newHead.y === food.y) {
+                score++;
+                spawnFood();
+            } else {
+                snake.pop(); // Yılanın sonu
+            }
+
+            snake.unshift(newHead); // Yeni baş ekle
+        }
+
+        // Yılanı çiz
+        function drawSnake() {
+            snake.forEach(segment => {
+                ctx.fillStyle = '#00FF00'; // Yılanın rengi
+                ctx.fillRect(segment.x, segment.y, gridSize, gridSize);
+            });
+        }
+
+        // Yemi çiz
+        function drawFood() {
+            ctx.fillStyle = '#FF0000'; // Yemin rengi
+            ctx.fillRect(food.x, food.y, gridSize, gridSize);
+        }
+
+        // Yemin yerini rastgele belirle
+        function spawnFood() {
+            const randomX = Math.floor(Math.random() * (canvasSize / gridSize)) * gridSize;
+            const randomY = Math.floor(Math.random() * (canvasSize / gridSize)) * gridSize;
+            food = { x: randomX, y: randomY };
+
+            // Yemi yılanın üzerine koymamaya dikkat et
+            if (snake.some(segment => segment.x === food.x && segment.y === food.y)) {
+                spawnFood();
+            }
+        }
+
+        // Yılanın çarpışmalarını kontrol et
+        function checkCollision() {
+            const head = snake[0];
+
+            // Sınır çarpışması
+            if (head.x < 0 || head.x >= canvasSize || head.y < 0 || head.y >= canvasSize) {
+                resetGame();
+            }
+
+            // Kendi üzerine çarpışma
+            for (let i = 1; i < snake.length; i++) {
+                if (head.x === snake[i].x && head.y === snake[i].y) {
+                    resetGame();
+                }
+            }
+        }
+
+        // Puanı güncelle
+        function updateScore() {
+            document.querySelector('.score').textContent = `Puan: ${score}`;
+        }
+
+        // Oyunu sıfırlama
+        function resetGame() {
+            snake = [{ x: 160, y: 160 }];
+            direction = { x: gridSize, y: 0 };
+            score = 0;
+            spawnFood();
+        }
+
+        // Oyunu başlat
+        initGame();
+    </script>
+</body>
+</html>
